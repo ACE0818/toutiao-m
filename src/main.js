@@ -9,6 +9,7 @@ import Vant from 'vant'
 import 'vant/lib/index.css'
 // 注册使用 Vant 组件库
 import 'amfe-flexible'
+import './utils/dayjs'
 
 Vue.use(Vant)
 Vue.config.productionTip = false

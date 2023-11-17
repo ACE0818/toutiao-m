@@ -1,7 +1,10 @@
 <template>
   <div class="home-container">
     <!-- 导航栏 -->
-    <van-nav-bar>
+    <van-nav-bar
+      class="page-nav-bar"
+      fixed
+    >
       <van-button
         class="search-btn"
         slot="title"
@@ -9,6 +12,7 @@
         size="small"
         round
         icon="search"
+        to="/search"
       >搜索</van-button>
     </van-nav-bar>
     <!-- /导航栏 -->
@@ -29,32 +33,52 @@
     <!-- /频道的文章列表 -->
     </van-tab>
     <div slot="nav-right" class="placeholder"></div>
-    <div slot="nav-right" class="hamburger-btn">
+    <div slot="nav-right" class="hamburger-btn" @click="isChannelEditShow = true">
         <i class="toutiao toutiao-gengduo"></i>
     </div>
   </van-tabs>
     <!-- /文章频道列表 -->
+
+    <!-- 频道编辑 -->
+    <van-popup
+      v-model="isChannelEditShow"
+      round
+      position="bottom"
+      :style="{ height: '100%' }"
+      closeable
+      close-icon-position="top-left"
+    >
+      <channel-edit :myChannels="channels" :active="active" @update-active="onUpdateActive"/>
+    </van-popup>
+    <!-- /频道编辑 -->
   </div>
 </template>
 
 <script>
 // 1、导入获取频道列表的方法
-import { getUserChannels } from '@/api/user'
-import ArticleList from './components/article-list.vue'
+import { getUserChannels } from '@/api/channel.js'
+import { getItem } from '@/utils/storage.js'
+import { mapState } from 'vuex'
+import ArticleList from './components/article-list'
+import ChannelEdit from './components/channel-edit'
 export default {
   name: 'HomeIndex',
   components: {
-    ArticleList
+    ArticleList,
+    ChannelEdit
   },
   props: {},
   data () {
     return {
       active: 0,
       // 4、定义数据接收频道列表
-      channels: []
+      channels: [],
+      isChannelEditShow: false
     }
   },
-  computed: {},
+  computed: {
+    ...mapState(['user'])
+  },
   watch: {},
   created () {
     // 3. 调用获取频道列表
@@ -65,11 +89,26 @@ export default {
     // 2. 定义加载频道列表数据的方法
     async loadChannels () {
       try {
-        const { data } = await getUserChannels()
-        this.channels = data.data.channels
-      } catch (error) {
+        let channels = []
+        const localChannels = getItem('TOUTIAO_CHANNELS')
+        if (this.user || !localChannels) {
+          // 登录 或者 未登录本地没有存储 获取后端数据
+          const { data } = await getUserChannels()
+          channels = data.data.channels
+        } else {
+          // 未登录并且本地有数据
+          channels = localChannels
+        }
+        this.channels = channels
+      } catch (err) {
         this.$toast('获取频道列表数据失败')
       }
+    },
+    onUpdateActive (index, isChannelEditShow = true) {
+      // 更新激活的频道项
+      this.active = index
+      // 关闭编辑频道弹层
+      this.isChannelEditShow = isChannelEditShow
     }
   }
 }
@@ -77,6 +116,7 @@ export default {
 
 <style scoped lang="less">
 .home-container {
+  padding-top: 174px;
   padding-bottom: 100px;
   /deep/ .van-nav-bar__title {
     max-width: unset;
@@ -92,7 +132,13 @@ export default {
     }
   }
   /deep/.channel-tabs {
-    .van-tabs_wrap {
+    .van-tabs__wrap {
+      position: fixed;
+      top: 92px;
+      left: 0;
+      right: 0;
+      z-index: 1;
+      width: 100%;
       height: 82px;
     }
     .van-tab {
