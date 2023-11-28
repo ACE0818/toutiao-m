@@ -9,9 +9,15 @@
       @load="onLoad"
     >
       <van-cell
-      v-for="(article, index) in list"
-      :key="index"
+        v-for="(article, index) in list"
+        :key="index"
         :title="article.title"
+        :to="{
+          name: 'article',
+          params: {
+            articleId: article.art_id
+          }
+        }"
       />
     </van-list>
   </div>
@@ -34,7 +40,8 @@ export default {
       loading: false,
       finished: false,
       page: 1,
-      perPage: 20
+      perPage: 20,
+      error: false
     }
   },
   computed: {},
